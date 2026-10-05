@@ -6,6 +6,7 @@ import SerpSnippetPreview from "./SerpSnippetPreview";
 import SeoScoreOverview from "./SeoScoreOverview";
 import SeoCategoryCards from "./SeoCategoryCards";
 import SocialResultsSection from "./SocialResultsSection";
+import ClaudePromptCard from "./ClaudePromptCard";
 import { categoryStatusClasses } from "../utils/constants";
 import { formatStatusLabel } from "../utils/format";
 import StatusBadge from "./StatusBadge";
@@ -49,6 +50,8 @@ export default memo(function ResultsView({
 					/>
 				</div>
 			</div>
+			
+			<ClaudePromptCard audit={ audit } excludedCheckIds={ excludedCheckIds }/>
 			
 			<SerpSnippetPreview preview={ audit.serpPreview }/>
 			
