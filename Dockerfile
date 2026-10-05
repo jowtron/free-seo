@@ -53,8 +53,12 @@ COPY server/package.json server/
 # Install production dependencies for the server workspace (tsx is included as a dependency)
 RUN npm install -w server --omit=dev --ignore-scripts
 
-# Install Playwright Chromium browser
-RUN npx -w server playwright install chromium
+# Install Playwright Chromium browser into a world-readable location, so the
+# unprivileged runtime user (USER below) can execute it. The default lands in
+# /root/.cache, which uid 1000 cannot read.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx -w server playwright install chromium \
+    && chmod -R a+rX /ms-playwright
 
 # Copy server source and shared types
 COPY shared/ shared/
@@ -64,12 +68,16 @@ COPY server/ server/
 COPY --from=build /app/client/dist client/dist
 
 # Create data directory for audit counter persistence
-RUN mkdir -p server/data
+RUN mkdir -p server/data && chown -R node:node /app
 
 # Default environment variables
 ENV NODE_ENV=production
 ENV PORT=80
 
 EXPOSE 80
+
+# This app renders arbitrary attacker-supplied pages in a real browser. Do NOT
+# run that as root. node:22-slim already ships uid 1000 `node`.
+USER node
 
 CMD ["npm", "start"]

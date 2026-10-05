@@ -207,7 +207,11 @@ class PlaywrightPageRenderer implements PageRenderer {
 		if (this.browserPool.length < this.MAX_BROWSERS) {
 			const browser = await chromium.launch({
 				headless: true,
-				args: ['--disable-dev-shm-usage', '--no-sandbox']
+				// --no-sandbox is opt-in rather than hardcoded: with a non-root USER the
+				// sandbox may start, and it is the real containment for hostile page JS.
+				args: process.env.FREE_SEO_DISABLE_SANDBOX === "1"
+					? ['--disable-dev-shm-usage', '--no-sandbox']
+					: ['--disable-dev-shm-usage']
 			});
 			this.browserPool.push(browser);
 			this.lastUsed.push(now);
