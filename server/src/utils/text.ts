@@ -86,6 +86,30 @@ export function extractVisibleText($: CheerioAPI): string {
 	return normalizeWhitespace(parts.join(" "));
 }
 
+// Text of a heading as a search engine reads it: an <img> contributes its alt
+// text, so an image-only heading such as a logo H1 still has a name.
+export function extractHeadingText(element: any): string {
+	const parts: string[] = [];
+
+	function walk(node: any) {
+		if (!node) return;
+		if (node.type === "text") {
+			parts.push(node.data);
+			return;
+		}
+		if (node.type !== "tag" || node.name === "script" || node.name === "style" || node.name === "template") return;
+		if (node.name === "img") {
+			parts.push(` ${ node.attribs?.alt ?? "" } `);
+			return;
+		}
+		const children = node.children || [];
+		for (let i = 0; i < children.length; i++) walk(children[i]);
+	}
+
+	walk(element);
+	return normalizeWhitespace(parts.join(""));
+}
+
 export function normalizeWhitespace(value: unknown): string {
 	return String(value ?? "").replace(/\s+/g, " ").trim();
 }

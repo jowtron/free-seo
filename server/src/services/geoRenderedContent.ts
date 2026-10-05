@@ -3,7 +3,7 @@ import { type Browser, chromium } from "playwright";
 import { parseStructuredData } from "./schemaParser.js";
 import { getGeoCheckScore } from "./geoScoring.js";
 import { assertPublicHttpUrl } from "./urlSafety.js";
-import { countWords, extractVisibleText, normalizeWhitespace } from "../utils/text.js";
+import { countWords, extractHeadingText, extractVisibleText, normalizeWhitespace } from "../utils/text.js";
 import { getBrowserIdleTimeout, getMaxBrowsers } from "./envConfig.js";
 import type { AuditContext, BaseCheckStatus, GeoRenderedContentResult, } from "../types.js";
 
@@ -149,7 +149,7 @@ export function buildSnapshot(
 		textLength: text.length,
 		wordCount: countWords(text),
 		h1Texts: $("h1")
-			.map((_index, element) => normalizeWhitespace($(element).text()))
+			.map((_index, element) => extractHeadingText(element))
 			.get()
 			.filter(Boolean),
 		mainText: normalizeWhitespace($("main").text()) || text,

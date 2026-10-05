@@ -3,7 +3,7 @@ import { fetchPage } from "./fetchPage.js";
 import { fetchRobotsTxt } from "./robots.js";
 import { normalizeInput } from "./normalizeInput.js";
 
-import { countWords, extractVisibleText, normalizeWhitespace } from "../utils/text.js";
+import { countWords, extractHeadingText, extractVisibleText, normalizeWhitespace } from "../utils/text.js";
 import { checkTitleTag } from "../checks/titleTag.js";
 import { checkMetaDescription } from "../checks/metaDescription.js";
 import { checkHreflang } from "../checks/hreflang.js";
@@ -76,7 +76,7 @@ export async function runAudit(
 	});
 	
 	const h1Texts: string[] = $("h1")
-		.map((_i, el) => normalizeWhitespace($(el).text()))
+		.map((_i, el) => extractHeadingText(el))
 		.get()
 		.filter(Boolean);
 	
