@@ -187,10 +187,29 @@ function isQualifiedPerson(
 		`${ context.titleText ?? "" } ${ (context.h1Texts ?? [])[0] ?? "" } ${ context.visibleText }`,
 	).toLowerCase();
 	return Boolean(
+		isSiteHomepageUrl(context, entity.url) ||
 		entity.knowsAbout ||
 		entity.serviceType ||
 		/professional|consultant|advisor|attorney|doctor|therapist|coach|freelancer/.test(pageText),
 	);
+}
+
+// A Person whose url is this site's homepage is the site's subject (an artist's
+// or practitioner's own site), not an author byline, so it is a primary identity.
+function isSiteHomepageUrl(
+	context: AuditContext,
+	url: string | null,
+): boolean {
+	if (!url) return false;
+	try {
+		const parsedUrl = new URL(url, context.finalUrl);
+		const siteUrl = new URL(context.finalUrl);
+		const bareHost = (host: string) => host.toLowerCase().replace(/^www\./, "");
+		return bareHost(parsedUrl.hostname) === bareHost(siteUrl.hostname)
+			&& (parsedUrl.pathname === "/" || parsedUrl.pathname === "");
+	} catch {
+		return false;
+	}
 }
 
 function schemaNameConflictsWithVisibleBrand(

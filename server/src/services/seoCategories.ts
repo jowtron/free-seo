@@ -333,8 +333,8 @@ function buildGeoCategory(
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Your Company Name",
-  "url": "https://www.${domain}",
-  "logo": "https://www.${domain}/images/logo.png",
+  "url": "https://${domain}",
+  "logo": "https://${domain}/images/logo.png",
   "description": "Brief description of your company (50-160 characters)",
   "sameAs": [
     "https://www.linkedin.com/company/yourcompany",
@@ -354,7 +354,7 @@ function buildGeoCategory(
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "Your Business Name",
-  "image": "https://www.${domain}/images/business.jpg",
+  "image": "https://${domain}/images/business.jpg",
   "telephone": "+1-555-123-4567",
   "address": {
     "@type": "PostalAddress",
@@ -369,7 +369,7 @@ function buildGeoCategory(
     "latitude": 40.7128,
     "longitude": -74.0060
   },
-  "url": "https://www.${domain}",
+  "url": "https://${domain}",
   "openingHoursSpecification": [
     {
       "@type": "OpeningHoursSpecification",
@@ -461,28 +461,28 @@ function buildGeoCategory(
 Brief description of your company, what you do, and who you serve.
 
 ## About
-- [About Us](https://www.${domain}/about) - Learn about our story, mission, and team
-- [Our Services](https://www.${domain}/services) - Explore what we offer
+- [About Us](https://${domain}/about) - Learn about our story, mission, and team
+- [Our Services](https://${domain}/services) - Explore what we offer
 
 ## Key Resources
-- [Contact Us](https://www.${domain}/contact) - Get in touch with our team
-- [Blog](https://www.${domain}/blog) - Latest news, guides, and insights
-- [Help Center](https://www.${domain}/help) - FAQs and documentation
+- [Contact Us](https://${domain}/contact) - Get in touch with our team
+- [Blog](https://${domain}/blog) - Latest news, guides, and insights
+- [Help Center](https://${domain}/help) - FAQs and documentation
 
 ## Legal
-- [Privacy Policy](https://www.${domain}/privacy)
-- [Terms of Service](https://www.${domain}/terms)`,
+- [Privacy Policy](https://${domain}/privacy)
+- [Terms of Service](https://${domain}/terms)`,
         `# Acme Corporation
 
 Helping businesses succeed with innovative solutions since 2010.
 
 ## What We Do
-We provide [cloud hosting](https://www.${domain}/cloud), [managed databases](https://www.${domain}/databases), and [24/7 support](https://www.${domain}/support) for businesses of all sizes.
+We provide [cloud hosting](https://${domain}/cloud), [managed databases](https://${domain}/databases), and [24/7 support](https://${domain}/support) for businesses of all sizes.
 
 ## Popular Pages
-- [Home](https://www.${domain})
-- [Pricing](https://www.${domain}/pricing)
-- [Case Studies](https://www.${domain}/case-studies)
+- [Home](https://${domain})
+- [Pricing](https://${domain}/pricing)
+- [Case Studies](https://${domain}/case-studies)
 - [Documentation](https://docs.${domain})
 
 ## Connect With Us

@@ -69,12 +69,12 @@ export async function buildSocialResultsReport(
 	items.push({
 		key: "facebook-page-linked",
 		label: "Facebook Page Linked",
-		status: fbPageLink.found ? "pass" : "fail",
+		status: fbPageLink.found ? "pass" : "unavailable",
 		score: fbPageLink.found ? 100 : 0,
 		weight: 10,
 		message: fbPageLink.found
 			? "Your page has a link to a Facebook Page."
-			: "No associated Facebook Page found as a link on your page.",
+			: "No associated Facebook Page found as a link on your page. Not scored: link one only if the organisation has one.",
 		detectedUrl: fbPageLink.url ?? undefined,
 	});
 
@@ -103,12 +103,14 @@ export async function buildSocialResultsReport(
 	items.push({
 		key: "facebook-pixel",
 		label: "Facebook Pixel",
-		status: fbPixel.found ? "pass" : "fail",
+		// A tracking pixel is an advertising choice, not an SEO signal, so its
+		// absence is reported but never scored.
+		status: fbPixel.found ? "pass" : "unavailable",
 		score: fbPixel.found ? 100 : 0,
 		weight: 10,
 		message: fbPixel.found
 			? "A Facebook Pixel was detected on your page."
-			: "We have not detected a Facebook Pixel on your page.",
+			: "We have not detected a Facebook Pixel on your page. Not scored: only needed if you run Meta Ads.",
 		helpText:
 			"The Meta Pixel enables visitor retargeting and conversion tracking for Meta Ads campaigns.",
 	});
@@ -116,12 +118,12 @@ export async function buildSocialResultsReport(
 	items.push({
 		key: "x-account-linked",
 		label: "X Account Linked",
-		status: xAccount.found ? "pass" : "fail",
+		status: xAccount.found ? "pass" : "unavailable",
 		score: xAccount.found ? 100 : 0,
 		weight: 10,
 		message: xAccount.found
 			? "Your page links to an X profile."
-			: "No associated X Profile found as a link on your page.",
+			: "No associated X Profile found as a link on your page. Not scored: link one only if the organisation has one.",
 		detectedUrl: xAccount.url ?? undefined,
 	});
 
@@ -148,36 +150,36 @@ export async function buildSocialResultsReport(
 	items.push({
 		key: "instagram-linked",
 		label: "Instagram Linked",
-		status: instagram.found ? "pass" : "fail",
+		status: instagram.found ? "pass" : "unavailable",
 		score: instagram.found ? 100 : 0,
 		weight: 10,
 		message: instagram.found
 			? "Your page links to an Instagram profile."
-			: "No associated Instagram Profile found linked on your page.",
+			: "No associated Instagram Profile found linked on your page. Not scored: link one only if the organisation has one.",
 		detectedUrl: instagram.url ?? undefined,
 	});
 
 	items.push({
 		key: "linkedin-page-linked",
 		label: "LinkedIn Page Linked",
-		status: linkedIn.found ? "pass" : "fail",
+		status: linkedIn.found ? "pass" : "unavailable",
 		score: linkedIn.found ? 100 : 0,
 		weight: 10,
 		message: linkedIn.found
 			? "Your page links to a LinkedIn page."
-			: "No associated LinkedIn Profile found linked on your page.",
+			: "No associated LinkedIn Profile found linked on your page. Not scored: link one only if the organisation has one.",
 		detectedUrl: linkedIn.url ?? undefined,
 	});
 
 	const youtubeChannel: SocialCheckItem = {
 		key: "youtube-channel-linked",
 		label: "YouTube Channel Linked",
-		status: youtube.found ? "pass" : "fail",
+		status: youtube.found ? "pass" : "unavailable",
 		score: youtube.found ? 100 : 0,
 		weight: 5,
 		message: youtube.found
 			? "Your page has a link to a YouTube Channel."
-			: "No associated YouTube Channel found linked on your page.",
+			: "No associated YouTube Channel found linked on your page. Not scored: link one only if the organisation has one.",
 		detectedUrl: youtube.url ?? undefined,
 	};
 	items.push(youtubeChannel);

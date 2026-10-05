@@ -268,12 +268,15 @@ export function detectXCardTags(
 		}
 	}
 
-	const missing = coreTags.filter((tag) => !foundNames.has(tag));
+	// twitter:site and twitter:creator name X accounts; a card renders without
+	// them, and a site with no X account cannot have them, so they are optional.
+	const requiredTags = ["twitter:card", "twitter:title", "twitter:description", "twitter:image"];
+	const missing = requiredTags.filter((tag) => !foundNames.has(tag));
 
 	if (found.length === 0) {
 		return { status: "fail", found, missing };
 	}
-	if (found.length === 6) {
+	if (missing.length === 0) {
 		return { status: "pass", found, missing };
 	}
 	return { status: "warning", found, missing };

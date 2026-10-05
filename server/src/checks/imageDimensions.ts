@@ -3,7 +3,11 @@ import type { AuditContext } from "../types.js";
 
 export function checkImageDimensions(context: AuditContext) {
 	const $ = context.$;
-	const images = $("img");
+	// An <img> with no src or srcset (e.g. a lightbox placeholder filled in by
+	// script) loads nothing and cannot shift layout, so it is not counted.
+	const images = $("img").filter((_i, el) =>
+		Boolean(($(el).attr("src") || "").trim() || ($(el).attr("srcset") || "").trim()),
+	);
 	
 	if (images.length === 0) {
 		return createCheckResult({

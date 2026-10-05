@@ -44,8 +44,8 @@ User-agent: Googlebot
 Allow: /
 
 # Sitemap location
-Sitemap: https://www.${domain}/sitemap.xml`,
+Sitemap: https://${domain}/sitemap.xml`,
 		aiPrompt:
-			`Create a robots.txt file at your domain root (e.g., https://www.${domain}/robots.txt). The file should allow all standard crawlers with 'User-agent: *' and 'Allow: /', while disallowing only private directories like /admin/. Include a Sitemap directive pointing to your sitemap URL, and ensure AI-specific crawlers are allowed to access public content.`,
+			`Create a robots.txt file at your domain root (e.g., https://${domain}/robots.txt). The file should allow all standard crawlers with 'User-agent: *' and 'Allow: /', while disallowing only private directories like /admin/. Include a Sitemap directive pointing to your sitemap URL, and ensure AI-specific crawlers are allowed to access public content.`,
 	});
 }

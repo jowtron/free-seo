@@ -10,10 +10,13 @@ export function checkHreflang(context: AuditContext) {
 		.$("head link")
 		.filter((_i, el) => {
 			const rel = context.$(el).attr("rel") || "";
+			// rel="alternate" also marks RSS/Atom feeds and print versions; only
+			// links carrying an hreflang attribute are hreflang tags.
 			return rel
 				.toLowerCase()
 				.split(/\s+/)
-				.includes("alternate");
+				.includes("alternate")
+				&& context.$(el).attr("hreflang") !== undefined;
 		})
 		.map((_i, el) => ({
 			hreflang: context.$(el).attr("hreflang") || "",
