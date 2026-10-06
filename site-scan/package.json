@@ -1,0 +1,18 @@
+{
+  "name": "site-scan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Whole-site scan service for free-seo: Unlighthouse on every page plus a crawl for broken links, redirects and duplicate titles",
+  "type": "module",
+  "main": "src/server.mjs",
+  "scripts": {
+    "start": "node src/server.mjs"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "unlighthouse": "0.19.1"
+  }
+}
