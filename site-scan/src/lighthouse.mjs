@@ -87,23 +87,47 @@ function describeItem(item) {
 	return null;
 }
 
+// Local runs: Unlighthouse's own result list, plus the full report extracted
+// from each page's lighthouse.html (its payload.js keeps only 20 audits).
 export async function summarize(outDir) {
 	const result = JSON.parse(await fs.readFile(path.join(outDir, "ci-result.json"), "utf8"));
 	const reportsDir = path.join(outDir, "reports");
+	const entries = [];
+	for (const route of result.routes || []) {
+		const routeDir = route.path === "/" ? reportsDir : path.join(reportsDir, route.path.replace(/^\/|\/$/g, ""));
+		const html = await fs.readFile(path.join(routeDir, "lighthouse.html"), "utf8").catch(() => null);
+		entries.push({
+			path: route.path,
+			report: html ? extractLighthouseJson(html) : null,
+			fallback: {
+				categories: Object.fromEntries(CATEGORIES.map(id => [id, route.categories?.[id]?.score ?? null])),
+				lcp: route.metrics?.["largest-contentful-paint"]?.displayValue ?? null,
+				cls: route.metrics?.["cumulative-layout-shift"]?.displayValue ?? null,
+			},
+		});
+	}
+	return { engine: "local", ...summarizeReports(entries) };
+}
+
+// Rolls full Lighthouse reports up into site-wide scores and failing audits.
+// entries: [{ path, report, fallback? }], where report is a Lighthouse result
+// (LHR) or null, and fallback supplies scores when the report is missing.
+export function summarizeReports(entries) {
 	const routes = [];
 	const audits = new Map();
 	let benchmarkIndex = null;
 
-	for (const route of result.routes || []) {
-		const routeDir = route.path === "/" ? reportsDir : path.join(reportsDir, route.path.replace(/^\/|\/$/g, ""));
-		const html = await fs.readFile(path.join(routeDir, "lighthouse.html"), "utf8").catch(() => null);
-		const report = html ? extractLighthouseJson(html) : null;
+	for (const { path: routePath, report, fallback } of entries) {
+		const categories = report
+			? Object.fromEntries(CATEGORIES.map(id => [id, report.categories?.[id]?.score ?? null]))
+			: fallback?.categories ?? Object.fromEntries(CATEGORIES.map(id => [id, null]));
+		const scores = Object.values(categories).filter(score => typeof score === "number");
 		routes.push({
-			path: route.path,
-			score: route.score,
-			categories: Object.fromEntries(CATEGORIES.map(id => [id, route.categories?.[id]?.score ?? null])),
-			lcp: route.metrics?.["largest-contentful-paint"]?.displayValue ?? null,
-			cls: route.metrics?.["cumulative-layout-shift"]?.displayValue ?? null,
+			path: routePath,
+			score: scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null,
+			categories,
+			lcp: report ? report.audits?.["largest-contentful-paint"]?.displayValue ?? null : fallback?.lcp ?? null,
+			cls: report ? report.audits?.["cumulative-layout-shift"]?.displayValue ?? null : fallback?.cls ?? null,
 		});
 		if (!report) continue;
 		benchmarkIndex ??= report.environment?.benchmarkIndex ?? null;
@@ -130,11 +154,11 @@ export async function summarize(outDir) {
 				audits.set(audit.id, entry);
 			}
 			entry.worstScore = Math.min(entry.worstScore, audit.score);
-			entry.pages.push(route.path);
+			entry.pages.push(routePath);
 			for (const item of audit.details?.items || []) {
 				const text = describeItem(item);
 				if (text && entry.examples.length < 5 && !entry.examples.some(example => example.text === text)) {
-					entry.examples.push({ page: route.path, text });
+					entry.examples.push({ page: routePath, text });
 				}
 			}
 		}

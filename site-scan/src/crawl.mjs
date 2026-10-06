@@ -264,5 +264,10 @@ export async function crawlSite(startUrl, { maxPages = 300, maxExternal = 300, c
 		orphanPages: crawlComplete
 			? [...sitemapSet].filter(url => !linkedInternally.has(url) && url !== start.href && pages.get(url)?.status === 200)
 			: null,
+		// Indexable pages in crawl order, for sampling Lighthouse pages. jobs.mjs
+		// takes this off before saving, so it never lands in job.json.
+		samplePool: [...new Set(htmlPages
+			.filter(page => !page.noindex && (!page.canonical || page.canonical === page.finalUrl) && new URL(page.finalUrl).origin === origin)
+			.map(page => page.finalUrl))],
 	};
 }

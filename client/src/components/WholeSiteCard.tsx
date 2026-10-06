@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { getScan, getSiteScanUrl, listScans, startScan, type Scan, type ScanOptions, type ScanSummary } from "../api/siteScan";
+import { getEngines, getScan, getSiteScanUrl, listScans, startScan, type LighthouseEngine, type Scan, type ScanOptions, type ScanSummary } from "../api/siteScan";
 import { categoryCheckStatusClasses } from "../utils/constants";
 import { copyText } from "../utils/clipboard";
 import { buildSiteScanPrompt, countSiteScanProblems } from "../utils/siteScanPrompt";
@@ -28,7 +28,9 @@ function describeProgress(scan: Scan): string {
 	if (!progress) return "Starting…";
 	if (progress.phase === "crawl") return `Crawling: ${ progress.crawled ?? 0 } pages so far.`;
 	if (progress.phase === "links") return `Checking links found on ${ progress.crawled ?? 0 } pages.`;
-	return `Lighthouse: ${ progress.done ?? 0 } of up to ${ progress.total ?? "?" } pages. Each takes about a minute on this box.`;
+	return scan.options?.engine === "pagespeed"
+		? `Lighthouse on Google's servers: ${ progress.done ?? 0 } of ${ progress.total ?? "?" } pages, about 4 at a time.`
+		: `Lighthouse: ${ progress.done ?? 0 } of up to ${ progress.total ?? "?" } pages. Each takes about a minute on this box.`;
 }
 
 function Findings({ title, count, note, children }: { title: string; count: number; note?: string; children: ReactNode }) {
@@ -101,7 +103,9 @@ function ScanResults({ scan, base }: { scan: Scan; base: string }) {
 						}) }
 					</div>
 					<p className="text-xs leading-relaxed text-brand-muted">
-						Averages across the sampled pages. Performance is measured on a low-power box, so it reads lower than PageSpeed Insights: compare pages with each other, and use PageSpeed Insights for the absolute numbers.
+						{ lighthouse.engine === "pagespeed"
+							? "Averages across the sampled pages, measured by Google's PageSpeed Insights, so they match what pagespeed.web.dev shows."
+							: "Averages across the sampled pages. Performance is measured on a low-power box, so it reads lower than PageSpeed Insights: compare pages with each other, and use PageSpeed Insights for the absolute numbers." }
 					</p>
 				</>
 			) }
@@ -176,6 +180,9 @@ function ScanResults({ scan, base }: { scan: Scan; base: string }) {
 								</li>
 							)) }
 						</Findings>
+						<Findings title="Pages PageSpeed Insights couldn't test" count={ lighthouse.failures?.length ?? 0 }>
+							{ lighthouse.failures?.map(item => <li key={ item.url }><Link href={ item.url }/> { item.error }</li>) }
+						</Findings>
 						<Findings title="Pages by performance score" count={ lighthouse.routes.length } note="Slowest first.">
 							{ lighthouse.routes.map(route => (
 								<li key={ route.path }>
@@ -206,11 +213,17 @@ export default memo(function WholeSiteCard({ url }: { url: string }) {
 	const [history, setHistory] = useState<ScanSummary[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [starting, setStarting] = useState(false);
-	const [options, setOptions] = useState<ScanOptions>({ crawlPages: 300, lighthousePages: 20, device: "mobile" });
+	const [options, setOptions] = useState<ScanOptions>({ crawlPages: 300, lighthousePages: 20, device: "mobile", engine: "pagespeed" });
+	const [engines, setEngines] = useState<LighthouseEngine[]>([]);
 
 	useEffect(() => {
 		getSiteScanUrl().then(setBase);
 	}, []);
+
+	useEffect(() => {
+		if (!base) return;
+		getEngines(base).then(setEngines).catch(() => setEngines([]));
+	}, [base]);
 
 	const load = useCallback(async (id: string) => {
 		if (!base) return;
@@ -246,7 +259,8 @@ export default memo(function WholeSiteCard({ url }: { url: string }) {
 	const handleStart = async () => {
 		setStarting(true);
 		try {
-			const { id } = await startScan(base, site, options);
+			const engine = options.engine && engines.includes(options.engine) ? options.engine : engines[0];
+			const { id } = await startScan(base, site, { ...options, engine });
 			await load(id);
 			setHistory(await listScans(base, site));
 		} catch (startError) {
@@ -283,6 +297,12 @@ export default memo(function WholeSiteCard({ url }: { url: string }) {
 					<option value="mobile">Mobile</option>
 					<option value="desktop">Desktop</option>
 				</select>
+				{ engines.length > 1 && options.lighthousePages > 0 && (
+					<select className={ selectClass } value={ options.engine } disabled={ active } onChange={ event => setOptions({ ...options, engine: event.target.value as LighthouseEngine }) }>
+						<option value="pagespeed">via Google (fast)</option>
+						<option value="local">on this box (slow, full report)</option>
+					</select>
+				) }
 				<button type="button" className={ buttonClass } disabled={ active || starting } onClick={ handleStart }>
 					{ active ? "Scanning…" : scan ? "Run a new scan" : "Scan the whole site" }
 				</button>
@@ -295,7 +315,7 @@ export default memo(function WholeSiteCard({ url }: { url: string }) {
 					<div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-muted">
 						<span>
 							Scan started { when(scan.createdAt) }
-							{ scan.options && `: ${ scan.options.crawlPages } crawl pages, Lighthouse on ${ scan.options.lighthousePages }, ${ scan.options.device }` }
+							{ scan.options && `: ${ scan.options.crawlPages } crawl pages, Lighthouse on ${ scan.options.lighthousePages }${ scan.options.lighthousePages > 0 ? (scan.options.engine === "pagespeed" ? " via Google" : " on this box") : "" }, ${ scan.options.device }` }
 						</span>
 						{ history.length > 1 && (
 							<select className={ selectClass } value={ scan.id } onChange={ event => load(event.target.value) }>

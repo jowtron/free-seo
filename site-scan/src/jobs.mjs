@@ -2,10 +2,12 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { crawlSite } from "./crawl.mjs";
-import { runLighthouse } from "./lighthouse.mjs";
+import { runLighthouse, summarizeReports } from "./lighthouse.mjs";
+import { runPageSpeed, samplePages } from "./pagespeed.mjs";
 
 // One scan at a time: the box is a 4-core Celeron shared with a TV kiosk, and
-// Lighthouse timings are meaningless when two Chromiums fight for the CPU.
+// local Lighthouse timings are meaningless when two Chromiums fight for the CPU.
+// The PageSpeed engine runs Lighthouse on Google's machines instead.
 const MAX_QUEUED = 5;
 const KEEP_SCANS = Number(process.env.SITE_SCAN_KEEP || 30);
 
@@ -115,27 +117,47 @@ export class JobStore {
 		};
 
 		await progress({ phase: "crawl", crawled: 0, queued: 1 });
-		job.crawl = await crawlSite(job.site, { maxPages: job.options.crawlPages, onProgress: progress, log });
+		const { samplePool, ...crawl } = await crawlSite(job.site, { maxPages: job.options.crawlPages, onProgress: progress, log });
+		job.crawl = crawl;
 		await this.save(job);
 
 		if (job.options.lighthousePages > 0) {
 			await progress({ phase: "lighthouse", done: 0, total: job.options.lighthousePages });
 			try {
-				job.lighthouse = await runLighthouse({
-					site: job.site,
-					outDir: path.join(this.dir(job.id), "report"),
-					routerPrefix: `/scans/${ job.id }/report/`,
-					maxRoutes: job.options.lighthousePages,
-					device: job.options.device,
-					onProgress: progress,
-					log,
-				});
+				job.lighthouse = job.options.engine === "pagespeed"
+					? await this.runPageSpeed(job, samplePool, progress, log)
+					: await runLighthouse({
+						site: job.site,
+						outDir: path.join(this.dir(job.id), "report"),
+						routerPrefix: `/scans/${ job.id }/report/`,
+						maxRoutes: job.options.lighthousePages,
+						device: job.options.device,
+						onProgress: progress,
+						log,
+					});
 			} catch (error) {
 				// Keep the crawl results; report the Lighthouse half as failed.
 				job.lighthouseError = error.message;
 			}
 		}
 		job.status = "done";
+	}
+
+	async runPageSpeed(job, samplePool, progress, log) {
+		const urls = samplePages(samplePool.length > 0 ? samplePool : [job.site], job.options.lighthousePages);
+		await progress({ phase: "lighthouse", done: 0, total: urls.length });
+		const { reports, failures } = await runPageSpeed({
+			urls,
+			device: job.options.device,
+			apiKey: process.env.PAGESPEED_API_KEY,
+			onProgress: progress,
+			log,
+		});
+		const entries = reports.map(({ url, report }) => {
+			const parsed = new URL(url);
+			return { path: `${ parsed.pathname }${ parsed.search }`, report };
+		});
+		return { engine: "pagespeed", ...summarizeReports(entries), failures };
 	}
 
 	async prune() {

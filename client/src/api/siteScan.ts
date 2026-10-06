@@ -68,18 +68,24 @@ export interface LighthouseRoute {
 	cls: string | null;
 }
 
+export type LighthouseEngine = "pagespeed" | "local";
+
 export interface LighthouseResult {
+	// Missing on scans from before the PageSpeed engine existed: those are local.
+	engine?: LighthouseEngine;
 	routesScanned: number;
 	benchmarkIndex: number | null;
 	categoryAverages: Record<LighthouseCategoryId, { average: number; min: number } | null>;
 	routes: LighthouseRoute[];
 	issues: LighthouseIssue[];
+	failures?: { url: string; error: string }[];
 }
 
 export interface ScanOptions {
 	crawlPages: number;
 	lighthousePages: number;
 	device: "mobile" | "desktop";
+	engine?: LighthouseEngine;
 }
 
 export interface ScanSummary {
@@ -131,6 +137,10 @@ async function call<T>(base: string, path: string, init?: RequestInit): Promise<
 	if (!response.ok) throw new Error(payload.error || `The site-scan service answered ${ response.status }.`);
 	return payload;
 }
+
+// Which Lighthouse engines the service offers: "pagespeed" needs its API key.
+export const getEngines = (base: string) =>
+	call<{ engines?: LighthouseEngine[] }>(base, "/healthz").then((result): LighthouseEngine[] => result.engines ?? ["local"]);
 
 export const listScans = (base: string, site: string) =>
 	call<{ scans: ScanSummary[] }>(base, `/api/scans?site=${ encodeURIComponent(site) }`).then(result => result.scans);

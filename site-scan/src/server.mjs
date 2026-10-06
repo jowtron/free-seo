@@ -14,6 +14,10 @@ const LIMITS = {
 	lighthousePages: { default: 20, max: 100 },
 };
 
+// PageSpeed Insights (Google runs Lighthouse) when there's a key; otherwise
+// Lighthouse runs here through Unlighthouse, which also builds a full report.
+const ENGINES = process.env.PAGESPEED_API_KEY ? ["pagespeed", "local"] : ["local"];
+
 const store = new JobStore(DATA_DIR);
 await store.load();
 
@@ -84,7 +88,7 @@ const server = http.createServer(async (req, res) => {
 			res.writeHead(204);
 			return res.end();
 		}
-		if (url.pathname === "/healthz") return send(res, 200, { ok: true, running: store.running, queued: store.queue.length });
+		if (url.pathname === "/healthz") return send(res, 200, { ok: true, running: store.running, queued: store.queue.length, engines: ENGINES });
 
 		if (url.pathname === "/api/scans" && req.method === "GET") {
 			const site = url.searchParams.get("site");
@@ -102,6 +106,7 @@ const server = http.createServer(async (req, res) => {
 				crawlPages: clampInt(body.crawlPages, LIMITS.crawlPages),
 				lighthousePages: clampInt(body.lighthousePages, LIMITS.lighthousePages),
 				device: body.device === "desktop" ? "desktop" : "mobile",
+				engine: ENGINES.includes(body.engine) ? body.engine : ENGINES[0],
 			});
 			return send(res, 202, { id: job.id, status: job.status });
 		}
@@ -113,7 +118,7 @@ const server = http.createServer(async (req, res) => {
 			return send(res, 200, {
 				...job,
 				queuePosition: queuePosition === -1 ? null : queuePosition + 1,
-				reportPath: job.lighthouse ? `/scans/${ job.id }/report/` : null,
+				reportPath: job.lighthouse && job.lighthouse.engine !== "pagespeed" ? `/scans/${ job.id }/report/` : null,
 			});
 		}
 		const reportMatch = url.pathname.match(/^\/scans\/([\w-]+)\/report(?:\/(.*))?$/);

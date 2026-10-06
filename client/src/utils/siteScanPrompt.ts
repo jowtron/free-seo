@@ -54,7 +54,10 @@ function lighthouseSection(lines: string[], lighthouse: LighthouseResult) {
 	const averages = Object.entries(lighthouse.categoryAverages)
 		.filter(([, value]) => value)
 		.map(([id, value]) => `${ CATEGORY_LABELS[id] } ${ percent(value!.average) } (lowest ${ percent(value!.min) })`);
-	lines.push("", "## Lighthouse findings", "", `Lighthouse ran on ${ lighthouse.routesScanned } sampled pages. Average scores: ${ averages.join(", ") }. Performance was measured on a low-power box, so treat those numbers as relative.`);
+	const where = lighthouse.engine === "pagespeed"
+		? "Lighthouse ran on Google's PageSpeed Insights servers, so the scores match what pagespeed.web.dev reports."
+		: "Performance was measured on a low-power box, so treat those numbers as relative.";
+	lines.push("", "## Lighthouse findings", "", `Lighthouse ran on ${ lighthouse.routesScanned } sampled pages. Average scores: ${ averages.join(", ") }. ${ where }`);
 	lighthouse.issues.forEach((issue, index) => {
 		lines.push("", `### ${ index + 1 }. ${ issue.title } (${ CATEGORY_LABELS[issue.category] }, on ${ issue.pageCount } of ${ lighthouse.routesScanned } pages)`);
 		if (issue.description) lines.push("", issue.description);
