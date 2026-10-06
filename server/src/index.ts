@@ -68,6 +68,12 @@ app.use(compression({
 }));
 
 // API endpoints
+// Where the optional site-scan service lives (site-scan/ in this repo). The
+// browser calls it directly, so this server never needs to reach it.
+app.get("/api/config", (_req, res) => {
+	res.json({ siteScanUrl: process.env.SITE_SCAN_URL || null });
+});
+
 app.get("/api/audit/count", (_req, res) => {
 	res.json({ count: getAuditCount(), cooldownSeconds: getCooldownSeconds() });
 });

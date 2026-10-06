@@ -8,6 +8,7 @@ import SeoCategoryCards from "./SeoCategoryCards";
 import SocialResultsSection from "./SocialResultsSection";
 import ClaudePromptCard from "./ClaudePromptCard";
 import GoogleToolsCard from "./GoogleToolsCard";
+import WholeSiteCard from "./WholeSiteCard";
 import { categoryStatusClasses } from "../utils/constants";
 import { formatStatusLabel } from "../utils/format";
 import StatusBadge from "./StatusBadge";
@@ -55,6 +56,8 @@ export default memo(function ResultsView({
 			<ClaudePromptCard audit={ audit } excludedCheckIds={ excludedCheckIds }/>
 			
 			<GoogleToolsCard url={ audit.finalUrl }/>
+			
+			<WholeSiteCard url={ audit.finalUrl }/>
 			
 			<SerpSnippetPreview preview={ audit.serpPreview }/>
 			
