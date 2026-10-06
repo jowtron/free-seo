@@ -1,5 +1,5 @@
 import { utilityClient } from "./httpClients.js";
-import { fetchTextWithRedirects } from "./fetchText.js";
+import { fetchStatusWithRedirects, fetchTextWithRedirects } from "./fetchText.js";
 import { evaluateRobotsAccess } from "./robots.js";
 import { getGeoCheckScore } from "./geoScoring.js";
 import { buildSampleLlmsTxtTemplate } from "./llmsTxtTemplate.js";
@@ -125,6 +125,7 @@ export async function checkGeoLlmsTxt(
 	let brokenLinks = 0;
 	let blockedLinks = 0;
 	let usefulLinks = 0;
+	const brokenLinkDetails: string[] = [];
 
 	const linksToProbe = links.slice(0, 20);
 	const probeResults = await Promise.all(
@@ -154,6 +155,10 @@ export async function checkGeoLlmsTxt(
 			if (result.useful) usefulLinks += 1;
 		} else {
 			brokenLinks += 1;
+			const reason = result.probeResult?.statusCode
+				? `HTTP ${ result.probeResult.statusCode }`
+				: result.probeResult?.error || "no response";
+			brokenLinkDetails.push(`${ result.link } (${ reason })`);
 			if (result.probeResult?.redirectsExceeded) {
 				issues.push(`A link redirects excessively: ${ result.link }.`);
 			}
@@ -166,7 +171,7 @@ export async function checkGeoLlmsTxt(
 	}
 	
 	if (brokenLinks > 0) {
-		issues.push(`${ brokenLinks } llms.txt link(s) are broken or unreachable.`);
+		issues.push(`${ brokenLinks } llms.txt link(s) are broken or unreachable${ brokenLinkDetails.length > 0 ? `: ${ brokenLinkDetails.join(", ") }` : "" }.`);
 		recommendations.push("Replace broken llms.txt links with stable canonical URLs.");
 	}
 	
@@ -214,7 +219,7 @@ async function fetchLlmsTxt(url: string): Promise<FetchTextResult> {
 
 async function probeLlmsTxtLink(url: string): Promise<LinkProbeResult> {
 	try {
-		const response = await fetchTextWithRedirects(url, utilityClient, {
+		const response = await fetchStatusWithRedirects(url, utilityClient, {
 			label: "llms.txt link",
 			maxRedirects: 3,
 		});

@@ -450,7 +450,8 @@ function buildGeoCategory(
       recommendations: geo.checks.llmsTxt.recommendations,
       explanation: "llms.txt is a Markdown file at your domain root that gives AI systems a curated overview of your site structure, purpose, and key pages.",
       prompts: [
-        `Create an llms.txt file at your domain root (https://${domain}/llms.txt) that provides AI systems with a clear summary of your site structure, purpose, and key pages. This file should be in Markdown format.`,
+        // Only suggest creating the file when it doesn't already exist.
+        ...(geo.checks.llmsTxt.exists ? [] : [`Create an llms.txt file at your domain root (https://${domain}/llms.txt) that provides AI systems with a clear summary of your site structure, purpose, and key pages. This file should be in Markdown format.`]),
         "Allow AI crawlers to access llms.txt by checking your robots.txt file includes: Allow: /llms.txt. Also ensure the file is served with Content-Type: text/plain or text/markdown.",
         "Write your llms.txt with a brief site description, followed by links to your most important canonical pages. Prioritize: About, Services/Products, Contact, and high-value content pages. Keep it concise and avoid listing every page.",
         "Review llms.txt for broken links and remove any links that are blocked by robots.txt or require authentication. Each link should point to a stable, publicly accessible URL that AI systems can fetch.",

@@ -57,3 +57,47 @@ export async function fetchTextWithRedirects(
 	
 	throw new Error("Too many redirects.");
 }
+
+// Like fetchTextWithRedirects, but only reads the status line and headers, then
+// closes the connection. For "does this link work?" probes, where downloading
+// the body is wasted work and a large page would trip maxContentLength and be
+// misreported as broken.
+export async function fetchStatusWithRedirects(
+	startUrl: string,
+	client: AxiosInstance,
+	options: FetchTextOptions = {},
+): Promise<{ url: string; statusCode: number }> {
+	const maxRedirects = options.maxRedirects ?? 5;
+	let currentUrl = await assertPublicHttpUrl(
+		startUrl,
+		options.label || "URL",
+	);
+	
+	for (let index = 0 ; index <= maxRedirects ; index += 1) {
+		const response = await client.get(currentUrl.href, {
+			responseType: "stream",
+			maxContentLength: -1,
+		});
+		const body = response.data as { destroy?: () => void } | undefined;
+		body?.destroy?.();
+		const locationHeader = response.headers["location"] as
+			| string
+			| undefined;
+		
+		if (redirectStatuses.has(response.status) && locationHeader) {
+			if (index === maxRedirects) {
+				throw new Error("Too many redirects.");
+			}
+			
+			const nextUrl = new URL(locationHeader, currentUrl.href);
+			nextUrl.hash = "";
+			await assertPublicHttpUrl(nextUrl, "Redirect target");
+			currentUrl = nextUrl;
+			continue;
+		}
+		
+		return { url: currentUrl.href, statusCode: response.status };
+	}
+	
+	throw new Error("Too many redirects.");
+}
