@@ -6,6 +6,7 @@ import { runAudit } from "./services/runAudit.js";
 import { getAuditCount, incrementAuditCount, subscribeToCountUpdates } from "./services/auditCounter.js";
 import { getCooldownSeconds, loadEnv } from "./services/envConfig.js";
 import { normalizeAuditCategoryIds } from "./types.js";
+import { searchConsoleReport, SearchConsoleError } from "./services/searchConsole.js";
 
 loadEnv();
 
@@ -72,6 +73,19 @@ app.use(compression({
 // browser calls it directly, so this server never needs to reach it.
 app.get("/api/config", (_req, res) => {
 	res.json({ siteScanUrl: process.env.SITE_SCAN_URL || null });
+});
+
+// Search Console data for a URL on one of the signed-in account's verified
+// sites. Separate from /api/audit: it only calls Google, and most audited
+// sites won't be in the account.
+app.get("/api/search-console", async (req, res) => {
+	try {
+		res.setHeader("Cache-Control", "no-store");
+		res.json(await searchConsoleReport(String(req.query.url ?? "")));
+	} catch (err) {
+		const status = err instanceof SearchConsoleError && err.status === 400 ? 400 : 500;
+		res.status(status).json({ error: err instanceof Error ? err.message : "Search Console lookup failed" });
+	}
 });
 
 app.get("/api/audit/count", (_req, res) => {
