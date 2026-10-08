@@ -134,7 +134,7 @@ function Performance({ performance }: { performance: SearchConsolePerformance })
 								<tr><th className="py-1 font-semibold">Top searches</th><th className="py-1 text-right font-semibold">Clicks</th><th className="py-1 text-right font-semibold">Impr.</th><th className="py-1 text-right font-semibold">Pos.</th></tr>
 							</thead>
 							<tbody className="text-brand-headline">
-								{ performance.queries.map(row => (
+								{ [...performance.queries].sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions).map(row => (
 									<tr key={ row.query } className="border-t border-brand-border">
 										<td className="py-1 pr-2 wrap-break-word">{ row.query }</td>
 										<td className="py-1 text-right">{ number(row.clicks) }</td>
@@ -145,6 +145,7 @@ function Performance({ performance }: { performance: SearchConsolePerformance })
 							</tbody>
 						</table>
 					) }
+					<p className="mt-2 text-xs text-brand-muted">Google leaves out rare searches for privacy, so the searches listed won't add up to the totals.</p>
 				</>
 			) }
 		</div>
